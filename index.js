@@ -10,15 +10,18 @@ const app = express()
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, '/uploads')
+      cb(null, './uploads')
     },
     filename: function (req, file, cb) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-      cb(null, file.fieldname + '-' + uuidv4() + path.extname)
+      cb(null, file.fieldname + '-' + uuidv4() + path.extname(file.originalname))
     }
   })
   
-  const upload = multer({ storage: storage })
+
+//multer configuration
+const upload = multer({ storage: storage })
+
 
 
 
@@ -60,7 +63,13 @@ app.get('/',(req,res) =>{
         message: "my vivdeo player"
     })
 })
+//route
+
+app.post("/uploads",upload.single("file"),(req,res)=>{
+    console.log("file uploaded")
+})
+
 
 app.listen(8000,()=>{
-    console.log("App is listening on 3000...")
+    console.log("App is listening on 8000...")
 })
