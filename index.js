@@ -3,6 +3,9 @@ import cors from "cors"
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import path from "path"
+import fs from "fs"
+import {exec} from "child_process" //watch outchat
+import { stderr, stdout } from "process";
 
 const app = express()
 
@@ -66,7 +69,40 @@ app.get('/',(req,res) =>{
 //route
 
 app.post("/uploads",upload.single("file"),(req,res)=>{
-    console.log("file uploaded")
+    const lessonID = uuidv4();
+    const videoPath = req.file.path
+    const outputPath = `./uploads/courses/${lessonID}`
+    const hlsPath = `${outputPath}/index.m3u8`
+    console.log("hlspath:",hlsPath)
+
+    if (!fs.existsSync(outputPath)) {
+        fs.mkdirSync(outputPath,{recursive: true})
+    }
+
+    //ffmpeg 
+    const ffmpegCommand = `ffmpeg -i ${videoPath} -codec:v libx264 -codec:a aac -hls_time 10 -hls_playlist_type vod -hls_segment_filename "${outputPath}/segment%03d.ts" -start_number 0 ${hlsPath}`
+
+
+    //no queue because of POC(proof of concept), not to be used in production
+    exec(ffmpegCommand,(error,stdout,stderr) =>{
+        if(error){
+            console.log(`exec error: ${error}`)
+        }
+        console.log(`stdout: ${stdout}`)
+        console.log(`stderr: ${stderr}`)
+        const videoUrl = `http://localhost:8000/uploads/courses/${lessonID}/index.m3u8`;
+
+        res.json({
+            message:  "Video Converted to  HLD format",
+            lessonId: lessonID,
+            videoUrl: videoUrl 
+        })
+
+    })
+
+
+
+
 })
 
 
